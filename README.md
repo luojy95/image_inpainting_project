@@ -13,4 +13,8 @@
 [Context Encoders: Feature Learning by Inpainting](https://github.com/pathak22/context-encoder)
 
 [Eye In-painting with Exemplar Generative Adversarial Networks (ExGANs)](https://bdol.github.io/exemplar_gans/)
+
+## Delivery
+inpaint.py (used to train model using data from train folder)
+validate.py (used to visulize and validate pre-trained model from validate folder)
            
