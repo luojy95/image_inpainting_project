@@ -16,5 +16,6 @@
 
 ## Delivery
 inpaint.py (used to train model using data from train folder)
+
 validate.py (used to visulize and validate pre-trained model from validate folder)
            
