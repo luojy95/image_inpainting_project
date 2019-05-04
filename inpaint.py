@@ -301,7 +301,7 @@ if __name__ == "__main__":
 
     Tensor = torch.cuda.FloatTensor if cuda_ava else torch.FloatTensor
     print("cuda available: ", cuda_ava)
-    print("add wgan_gp penalty param: ", ADD_GP_PEN)
+    print("add wgan_gp penalty coefficient: ", ADD_GP_PEN)
 
     # Create the generator
     netG = Generator(ngpu).to(device)
