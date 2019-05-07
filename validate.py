@@ -24,52 +24,55 @@ import torch.autograd as autograd
 import torch.nn.functional as F
 from inpaint import Generator, Discriminator, generate_mask
 
-if __name__ == "__main__":
 
-	os.makedirs("./validation", exist_ok=True)
+VAL_PATH = "./validation/65299_globalMSE_noPenalty"
 
-	# ======= Load pre-trained model ======== #
-	PATH = './models/10_model'
+os.makedirs(VAL_PATH, exist_ok=True)
 
-	ngpu = 1
+# ======= Load pre-trained model ======== #
+PATH = './models/65299_globalMSE_noPenalty'
 
-	device = torch.device("cuda:0" if (torch.cuda.is_available() and ngpu > 0) else "cpu")
-	netG = Generator(ngpu).to(device)
-	netG.load_state_dict(torch.load(PATH + '/generator'))
-	netG.eval()
+ngpu = 1
 
-	netD = Discriminator(ngpu).to(device)
-	netD.load_state_dict(torch.load(PATH + '/discriminator'))
-	netD.eval()
+device = torch.device("cuda:0" if (torch.cuda.is_available() and ngpu > 0) else "cpu")
+netG = Generator(ngpu).to(device)
+netG.load_state_dict(torch.load(PATH + '/generator'))
+netG.eval()
 
-	# ======== Load validate file ======== #
-	LOCAL_PATH = '../validate'
-	dataset = dset.ImageFolder(root=LOCAL_PATH,
-	                           transform=transforms.Compose([
-	                               transforms.Resize(64),
-	                               transforms.CenterCrop(64),
-	                               transforms.ToTensor(),
-	                               transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-	                           ]))
+netD = Discriminator(ngpu).to(device)
+netD.load_state_dict(torch.load(PATH + '/discriminator'))
+netD.eval()
 
-	dataloader = torch.utils.data.DataLoader(dataset, batch_size=16,
-	                                         shuffle=True, num_workers=2)
+# ======== Load validate file ======== #
+LOCAL_PATH = './validate'
+dataset = dset.ImageFolder(root=LOCAL_PATH,
+                           transform=transforms.Compose([
+                               transforms.Resize(64),
+                               transforms.CenterCrop(64),
+                               transforms.ToTensor(),
+                               transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                           ]))
 
-	for i, data in enumerate(dataloader, 0):
-	    fixed_img = data[0].to(device)
-	    while(1):
-	        mask1, _ = generate_mask(16, 3, 64, 64)
-	        if np.sum(mask1)/16 > 800:
-	            break
-	    fixed_mask = torch.Tensor(mask1).to(device)
-	    holed_img = fixed_img*(1-fixed_mask)
-	    fixed_input = torch.cat((holed_img, fixed_mask), dim=1)
-	    fake = netG(fixed_input).detach().cpu()
-	    input_fake = (fake * (fixed_mask.detach().cpu())) + holed_img.detach().cpu()
-	    save_image(input_fake.data[:16], "./validation/predicted.png" , nrow=4, normalize=True)
-	    save_image(holed_img[:16], "./validation/holed_img.png", nrow=4, normalize=True)
-	    save_image(fixed_img[:16], "./validation/origin_img.png", nrow=4, normalize=True)
-	    break
+dataloader = torch.utils.data.DataLoader(dataset, batch_size=16, shuffle=True, num_workers=2)
+
+for i, data in enumerate(dataloader, 0):
+    fixed_img = data[0].to(device)
+    print(i, "iteration")
+    if(fixed_img.shape[0]!=16):
+        break
+    while(1):
+        mask1, _ = generate_mask(16, 3, 64, 64)
+        if np.sum(mask1)/16 > 800:
+            break
+    fixed_mask = torch.Tensor(mask1).to(device)
+    holed_img = fixed_img*(1-fixed_mask)
+    fixed_input = torch.cat((holed_img, fixed_mask), dim=1)
+    fake = netG(fixed_input).detach().cpu()
+    input_fake = (fake * (fixed_mask.detach().cpu())) + holed_img.detach().cpu()
+    save_image(input_fake.data[:16], VAL_PATH + "/predicted_%d.png" % i, nrow=4, normalize=True)
+    save_image(holed_img[:16], VAL_PATH + "/holed_img_%d.png" % i, nrow=4, normalize=True)
+    save_image(fixed_img[:16], VAL_PATH + "/origin_img_%d.png" % i, nrow=4, normalize=True)
+	    
 
 
 

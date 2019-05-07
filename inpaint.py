@@ -55,9 +55,9 @@ def compute_gradient_penalty(D, real_samples, fake_samples_g, fake_samples_l):
     interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples_g)).requires_grad_(True)
     d_interpolates = D(interpolates, fake_samples_l)
     fake = Variable(Tensor(real_samples.shape[0], 1).fill_(1.0), requires_grad=False)
-    print("fake shape: ", fake.shape)
-    print("d_interpolates shape: ", d_interpolates.shape)
-    print("interpolates shape: ", interpolates.shape)
+    # print("fake shape: ", fake.shape)
+    # print("d_interpolates shape: ", d_interpolates.shape)
+    # print("interpolates shape: ", interpolates.shape)
     # Get gradient w.r.t. interpolates
     gradients = autograd.grad(
         outputs=d_interpolates,
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     MIN_MASK_SIZE = 25
 
     # Local dict
-    LOCAL_DICT = 'final_trial_1'
+    LOCAL_DICT = 'loacalMSE_noPenalty'
 
     # LOCAL == 1, Generator only use local MSE; otherwise use both global and local
     LOCAL = 1
@@ -247,7 +247,7 @@ if __name__ == "__main__":
     os.makedirs(LOCAL_DICT, exist_ok=True)
 
     # Add WGAN_GP penalty
-    ADD_GP_PEN = 1
+    ADD_GP_PEN = 0
 
     # Number of workers for dataloader
     workers = 2
@@ -272,10 +272,10 @@ if __name__ == "__main__":
     ndf = 64
 
     # Number of training epochs
-    num_epochs = 200
+    num_epochs = 100
 
     # Learning rate for optimizers
-    lr = 0.0002
+    lr = 0.00015
 
     # Beta1 hyperparam for Adam optimizers
     beta1 = 0.5
@@ -443,8 +443,8 @@ if __name__ == "__main__":
             
             running_loss_d += errD.item()
             if iters % 500 == 0:    # print every 2000 mini-batches
-                print('discriminator loss: %.3f' %
-                      (running_loss_d / 500))
+                print('[%d/%d][%d/%d] Discriminator loss: %.3f' %
+                      (epoch, num_epochs, i, len(dataloader), running_loss_d / 500))
                 running_loss_d = 0.0
                 
                 
@@ -466,9 +466,9 @@ if __name__ == "__main__":
             if LOCAL:
                 MSE = torch.sum((diff_batch**2)*mask_batch)/(real_batch_size * 64 * 64)
             else:
-                MES_local = torch.sum((diff_batch**2)*mask_batch)/(real_batch_size * 64 * 64)
+                MSE_local = torch.sum((diff_batch**2)*mask_batch)/(real_batch_size * 64 * 64)
                 MSE_global = torch.sum((diff_batch**2))/(real_batch_size * 64 * 64)
-                MSE = MSE_local + MES_global
+                MSE = MSE_local + MSE_global
 
             MSE.backward()
             loss = MSE + errG
@@ -477,9 +477,10 @@ if __name__ == "__main__":
             running_loss_g += loss.item()
             # print every 500 mini-batches
             if iters % 500 == 0:   
-                print('generator loss: %.3f' %
-                      (running_loss_g / 500))
+                print('[%d/%d][%d/%d] Generator loss: %.3f' %
+                      (epoch, num_epochs, i, len(dataloader), running_loss_g / 500))
                 running_loss_g = 0.0
+
 
             # Save predicted image every 500 iterations
             if (iters % 500 == 0) or ((epoch == num_epochs-1) and (i == len(dataloader)-1)):
